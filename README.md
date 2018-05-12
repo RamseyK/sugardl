@@ -1,4 +1,4 @@
-# sugardl - A tool to automate downloading all files from your SugarSync account
+# SugarDL - A tool to automate downloading all files from your SugarSync account
 https://github.com/RamseyK/sugardl
 
 
@@ -7,13 +7,13 @@ Python script to automate downloading all files in your SugarSync account using 
 ## Usage:
 
 ```bash
-main.py -u <SUGARSYNC USERNAME> -p <SUGARSYNC PASSWORD> -a <APPID> -publicAccessKey <ACCESS KEY> -privateAccessKey <PRIVATE ACCESS KEY> -o "/Users/jsmith/output"
+sugardl.py -u <SUGARSYNC USERNAME> -p <SUGARSYNC PASSWORD> -a <APPID> -publicAccessKey <ACCESS KEY> -privateAccessKey <PRIVATE ACCESS KEY> -o "/Users/jsmith/output"
 
 ```
 
 
 ```bash
-usage: main.py [-h] -u USER -p PASSWORD -a APPID -publicAccessKey
+usage: sugardl.py [-h] -u USER -p PASSWORD -a APPID -publicAccessKey
                PUBLICACCESSKEY -privateAccessKey PRIVATEACCESSKEY -o OUTPUT
 
 A tool to automate downloading all files from your SugarSync account
