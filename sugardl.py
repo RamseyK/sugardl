@@ -305,6 +305,7 @@ class SugarDL(object):
     def _download_file_contents(self, file_metadata, local_filepath):
         """
         Downloads file contents
+        https://www.sugarsync.com/dev/api/method/get-file-data.html
 
         :param file_metadata:
         :param local_filepath: Full path to write file data to

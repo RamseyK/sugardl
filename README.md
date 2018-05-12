@@ -2,7 +2,7 @@
 https://github.com/RamseyK/sugardl
 
 
-Python script to automate the bulk download of all files in your SugarSync account using SugarSync Developer APIs
+Python script to automate downloading all files in your SugarSync account using SugarSync Developer APIs.  Useful for when you can't install the SugarSync client on your destination machine (ie. Linux), or want to automate backups of your storage.
 
 ## Usage:
 
