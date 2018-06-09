@@ -5,6 +5,7 @@ import datetime
 import time
 import sys
 import argparse
+import traceback
 from dateutil import parser as dateutil_parser
 from collections import defaultdict
 from xml.etree import cElementTree as ET
@@ -68,20 +69,23 @@ class SugarDL(object):
         # Folder information
         self._folder_metadata = []
 
-    def download_files(self, output):
+    def download_files(self, output, replace=False):
         """
         Downloads all files from the SugarSync account to the provided output folder
 
         :param output: Destination top level output folder
+        :param replace: If True, replace contents in the output folder even if it exists. Default, skip any existing files
         :return: True if successful, False otherwise
         """
 
         try:
 
             # Create output directory
-            self._output_path = os.path.join(output,
-                                             "sugardl_{}".format(datetime.datetime.now().strftime("%Y%m%d_%H%M%S")))
-            os.makedirs(self._output_path)
+            # self._output_path = os.path.join(output,
+            #                                  "sugardl_{}".format(datetime.datetime.now().strftime("%Y%m%d_%H%M%S")))
+            # os.makedirs(self._output_path)
+            # Just write to the provided output directory
+            self._output_path = output
 
             #####
             # Authenticate: getting a refresh token, then an access token
@@ -105,11 +109,11 @@ class SugarDL(object):
             #####
             for folder in self._folder_metadata:
                 print("== SYNC FOLDER DOWNLOAD: {} ==".format(folder['displayName']))
-                self._download_folder_contents(folder['contents'], "{}/{}".format(self._output_path, folder['displayName']), start_idx=0)
+                self._download_folder_contents(folder['contents'], "{}/{}".format(self._output_path, folder['displayName']), start_idx=0, replace=replace)
                 print("")
 
         except Exception as e:
-            print("Error in download_files: {}".format(e))
+            print("Error in download_files: {}".format(traceback.print_exc()))
             return False
 
         return True
@@ -256,7 +260,7 @@ class SugarDL(object):
 
         print("")
 
-    def _download_folder_contents(self, folder_uri, relpath, start_idx=0):
+    def _download_folder_contents(self, folder_uri, relpath, start_idx=0, replace=False):
         """
         Recursively downloads all file content within a folder
         https://www.sugarsync.com/dev/api/method/get-folder-info.html
@@ -264,6 +268,7 @@ class SugarDL(object):
         :param folder_uri: URI of the target folder
         :param relpath: Relative path to the folder from the root the users SugarSync profile
         :param start_idx: Item index to start downloading at
+        :param replace: If True, replace file contents if the file already exists. Otherwise, leave alone
         :return:
         """
 
@@ -286,23 +291,49 @@ class SugarDL(object):
         vals = etree_to_dict(ET.XML(resp.content.decode('utf-8')))
 
         # Download all top level files
-        for f in vals.get('collectionContents', {}).get('file', list()):
-            filepath = "{}/{}".format(relpath, f['displayName'])
-            print("Downloading: {}".format(filepath))
+        ret_files = vals.get('collectionContents', {}).get('file', list())
+        if isinstance(ret_files, dict):
+            # Case when there is only a single file
+            files = []
+            files.append(ret_files)
+        else:
+            files = ret_files
+
+        for f in files:
+
             try:
+                filepath = "{}/{}".format(relpath, f['displayName'])
+
+                if not replace and os.path.exists(filepath):
+                    print("File already exists, skipping {}".format(filepath))
+                    continue
+
+                print("Downloading: {}".format(filepath))
+
                 self._download_file_contents(f, filepath)
-            except Exception as e:
-                print("Error downloading {}: {}".format(filepath, e))
+            except:
+                print("Error downloading {}: {}".format(f, traceback.print_exc()))
 
         # If there are more than 500 items, recursively call on this same folder but start at start_idx+500
         item_count = len(vals.get('collectionContents', {}).get('collection', list())) + len(
             vals.get('collectionContents', {}).get('file', list()))
         if item_count >= 500:
-            self._download_folder_contents(folder_uri, relpath, start_idx=start_idx+500)
+            self._download_folder_contents(folder_uri, relpath, start_idx=start_idx+500, replace=replace)
 
         # Download all folders
-        for subfolder in vals.get('collectionContents', {}).get('collection', list()):
-            self._download_folder_contents(subfolder['contents'], relpath + "/" + subfolder['displayName'])
+        subfolders_ret = vals.get('collectionContents', {}).get('collection', list())
+        if isinstance(subfolders_ret, dict):
+            # Case when there is only one subfolder
+            subfolders = []
+            subfolders.append(subfolders_ret)
+        else:
+            subfolders = subfolders_ret
+
+        for subfolder in subfolders:
+            try:
+                self._download_folder_contents(subfolder['contents'], relpath + "/" + subfolder['displayName'], replace=replace)
+            except:
+                print("Error downloading subfolder: {}".format(traceback.print_exc()))
 
     def _download_file_contents(self, file_metadata, local_filepath):
         """
@@ -352,12 +383,13 @@ def main():
     parser.add_argument('-a', '--appId', type=str, required=True, help="Developer app ID")
     parser.add_argument('-publicAccessKey', '--publicAccessKey', type=str, required=True, help="Developer Public Access Key")
     parser.add_argument('-privateAccessKey', '--privateAccessKey', type=str, required=True, help="Developer Private Access Key")
-    parser.add_argument('-o', '--output', type=str, required=True, help="Output directory")
+    parser.add_argument('-o', '--output', type=str, required=True, help="Output directory where files will be written to")
+    parser.add_argument('-r', '--replace', type=bool, required=False, default=False, help="Replace contents in target directory if they already exist, otherwise leave alone")
 
     args = parser.parse_args()
 
     sugardl = SugarDL(args.user, args.password, args.appId, args.publicAccessKey, args.privateAccessKey)
-    if not sugardl.download_files(args.output):
+    if not sugardl.download_files(args.output, replace=args.replace):
         print("Program terminated with a fatal error")
         return -1
 
