@@ -212,7 +212,7 @@ class SugarDL(object):
 
         resp = requests.get(BASE_URL + "user/{}".format(self._user_id), headers=add_headers, verify=False)
         if resp.status_code >= 300:
-            raise Exception("Failed to claim access token: {}".format(resp))
+            raise Exception("Failed to retrieve user info: {}".format(resp))
 
         vals = etree_to_dict(ET.XML(resp.content.decode('utf-8')))
 
@@ -286,7 +286,7 @@ class SugarDL(object):
 
         resp = requests.get(folder_uri, headers=add_headers, params={'start': start_idx}, verify=False)
         if resp.status_code >= 300:
-            raise Exception("Failed to claim access token: {}".format(resp))
+            raise Exception("Failed to retrieve folder info: {}".format(resp))
 
         vals = etree_to_dict(ET.XML(resp.content.decode('utf-8')))
 
