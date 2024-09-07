@@ -43,7 +43,7 @@ optional arguments:
 
 ### Python
 
-* Python 3.5+ or Python 2.7 (untested)
+* Python 3.5+
 * [requests](https://pypi.python.org/pypi/requests)
 * [python-dateutil](https://pypi.org/project/python-dateutil/)
 
